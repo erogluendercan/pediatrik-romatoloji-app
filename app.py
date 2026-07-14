@@ -2,23 +2,13 @@ import streamlit as st
 import datetime
 from Bio import Entrez
 from deep_translator import GoogleTranslator
-import gspread
-from google.oauth2.service_account import Credentials
-import pandas as pd
 
 # Sayfa Tasarımı ve Başlık
 st.set_page_config(page_title="Pediatri Romatoloji Literatür", page_icon="🩺", layout="centered")
 
-# Sabit Google Sheets Bilgileri
-TABLO_URL = "https://docs.google.com/spreadsheets/d/1PPJkcODWesAna4BlP7qFl59FfThZ5Kg-sWba5S-QDdk/edit?usp=sharing"
-TABLO_ID = "1PPJkcODWesAna4BlP7qFl59FfThZ5Kg-sWba5S-QDdk"
-
-# Sitenin arka planını sarı yapan, yazıları siyaha sabitleyen ve mobil uyumluluk sağlayan CSS
+# Sitenin arka planını sarı yapan, yazıları siyaha sabitleyen CSS
 st.markdown(
     """
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    
     <style>
     .stApp {
         background-color: #FEF9E7;
@@ -59,25 +49,6 @@ st.markdown(
         color: #F1C40F !important;
     }
     
-    /* Yan paneldeki Excel butonu için özel stil */
-    .excel-buton {
-        display: block;
-        background-color: #27AE60 !important;
-        color: #FFFFFF !important;
-        padding: 12px;
-        text-align: center;
-        font-weight: bold !important;
-        text-decoration: none;
-        border-radius: 8px;
-        border: 2px solid #2ECC71;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-    }
-    .excel-buton:hover {
-        background-color: #219653 !important;
-        color: #FFFFFF !important;
-    }
-    
     @media (max-width: 640px) {
         .makale-kart h3 { font-size: 1.1em !important; }
         .makale-kart p { font-size: 0.85em !important; }
@@ -86,72 +57,6 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-
-# --- DIRECT GOOGLE API (GSPREAD) BAĞLANTISI ---
-@st.cache_resource
-def get_gspread_client():
-    # Şifre bilgilerini doğrudan kod içerisine gömüyoruz
-    info = {
-        "type": "service_account",
-        "project_id": "wired-effort-502410-g2",
-        "private_key_id": "7bc57a92e0e8bd0676b38b1447e1aa0892aa9e30",
-        "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC+1ymky9Pgcm7u\nOBad/vo+4s4N6fL4H9dF5QliCG4ZNvw7p71afNWMFXUc1YV4teSRCoxm+9wZCkLY\nHsFOI2irPkE2XySzfaPBE+h/14YRkOC7FLtZRczljrWvsw2o0rNwtj0e3JY1oOx3\nnOWpRdVzcMX6ndUblW5J1NU3K9noFhDRV41gRVT+Oe8IKNr40jkjcETey3lQRt69\nePD02odJUjjZI02d2rb2t8aQHz6q4sha89lKr9TnTiwEQ2UH6lKFqO1LbEhgUd51\nbxl4qYNxkmjjyx3tucoe2wpV8VSMEgOBd5RV4IyT7EQFC9yZakEP9qfwxIV++qum\nOQ0t42JjAgMBAAECggEAFiWXHhpPaNUu3XNh4I0GEoU0n3W+biAX1fMp/xf2WvPA\nGtYxCc7B44Nb93AqEKOfNlvQhmUFGlzP/A+5pC1EyNatL7ej5TaX6eC7Exb6ZpB3\nH0gI7Q6tFeMCaeKGXZSupZkS1zErfJN/cB2y/PJUn8F\na57RTByVzGBYsEJT6lA7qyzEGGiidfDbWIVM/oKOrWw6VHkq/rTSMZd24PwY9BUa\n1EkvBORO24eX2EbqvALjfD0PPKdfN7BPCZ/0l4zULFuvrG6H51v1Le23jFgBy6aV\nlOnG6x2MFk6MDZPkB9hG7EpPslI8zpLWdIXUEMhaJQKBgQD3msPb/uGX439niM4B\nv7IOlZ1PE06nBRUEcUzURe9T/adsPUT2SA0OojyB0jex6UGtvUigbpa0eReaTjgN\nl/+AZKKTT6M25uUOhrQ9cjvFRzCqo8nABS+jRWoB7R+3Vq/ndXyINOkv5narQQPQ\nM7yicFmpNM//PqsxHe0bin69JwKBgQDFT63dvxpDI6TEGTaoh4gB6a8acc9cHIgQ\ EsKwWvx2KVqp2SnGIXw822bWhjtdbK/MqdHR11uhUc5P4Ha3UdaKdoCjeP8UbzEK\nozba5bbG9hiQydXmkjCh0Al+9RgpE6SuUNYtveO/kzvbpMe4hpZRZ9BtgRpnfhJI\nuHRQ4ARuZQKBgQDbrzoln/BCljt8/flhvdZacE6BUW0QbUbniSsUj/Q3Pi/krjvY\nk7baDAHJYV2/AWkfoHimt1gJSgMyCkJbdUfhf+hq8VarqJMEn2mdtxPnBjHcxLOF\nJlTM9RKIIP5p6YTqxOe35dIbiMwzR9z9RloQecRjh5MgMVcsnhO4wtmOMwKBgE7+\njX9fySXkGU0hQw7J5BvP8PjHY9te2OKGgEeWxciQ2elyNhVKxrCerldouk+2+dMY\nkhZPADJfzBeSqDTQoPIia3IHOSh3M80sdwPAQCL71+3vwKFlGe9OmN6pRZj8ckwP\ntQ/vHEVQrwBKwmMQDxJcW8fbjjSs9qkCoB7Y8S05AoGAJG61yDBsAGTdIPSkjUVi\nHzpdXkRHAe6IZA9vVn8hmm7BJCGptzeqRmjBmbR7ILUCWluXgXJpIXrMMo/5U+Sz\nFkaBxi6ZMLUrVewql9Xw+CR4GJjSOf4ke71uDqRjmrAxA+CjTbtgYyBCFAcgb4/7\nz42nDgXl96wIE3a7NEDi1LE=\n-----END PRIVATE KEY-----\n",
-        "client_email": "streamlit-yazar@wired-effort-502410-g2.iam.gserviceaccount.com",
-        "client_id": "111242240198387384092",
-        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-        "token_uri": "https://oauth2.googleapis.com/token",
-        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-        "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/streamlit-yazar%40wired-effort-502410-g2.iam.gserviceaccount.com"
-    }
-    
-    # Şifre temizliği garantisi
-    info["private_key"] = info["private_key"].replace("\\n", "\n")
-    
-    scope = [
-        "https://www.googleapis.com/auth/spreadsheets",
-        "https://www.googleapis.com/auth/drive"
-    ]
-    creds = Credentials.from_service_account_info(info, scopes=scope)
-    return gspread.authorize(creds)
-
-def favorileri_yukle():
-    try:
-        client = get_gspread_client()
-        sheet = client.open_by_key(TABLO_ID).sheet1
-        data = sheet.get_all_records()
-        if not data:
-            return pd.DataFrame(columns=["index", "pmid", "baslik", "dergi", "link", "ekleyen"])
-        return pd.DataFrame(data)
-    except Exception as e:
-        st.sidebar.error(f"Bağlantı Sorunu: {e}")
-        return pd.DataFrame(columns=["index", "pmid", "baslik", "dergi", "link", "ekleyen"])
-
-def favori_ekle_sheets(index, pmid, baslik, dergi, link, ekleyen_kisi):
-    try:
-        client = get_gspread_client()
-        sheet = client.open_by_key(TABLO_ID).sheet1
-        
-        df = favorileri_yukle()
-        if str(pmid) not in df['pmid'].astype(str).values:
-            ekleyen = ekleyen_kisi if ekleyen_kisi else "Anonim/Anonymous"
-            sheet.append_row([int(index), str(pmid), str(baslik), str(dergi), str(link), str(ekleyen)])
-    except Exception as e:
-        st.error(f"Ekleme Hatası: {e}")
-
-def favori_cikar_sheets(pmid):
-    try:
-        client = get_gspread_client()
-        sheet = client.open_by_key(TABLO_ID).sheet1
-        df = favorileri_yukle()
-        
-        df['pmid'] = df['pmid'].astype(str)
-        silinecek_indexler = df.index[df['pmid'] == str(pmid)].tolist()
-        
-        if silinecek_indexler:
-            for idx in sorted(silinecek_indexler, reverse=True):
-                sheet.delete_rows(idx + 2)
-    except Exception as e:
-        st.error(f"Silme Hatası: {e}")
 
 # Yardımcı Çeviri Fonksiyonu
 def ceviri_yap(metin, hedef_dil):
@@ -162,7 +67,7 @@ def ceviri_yap(metin, hedef_dil):
     except:
         return metin
 
-# 1. ADIM: En Başta Dil Seçimi
+# Dil Seçimi
 dil = st.radio("Language / Dil Seçimi (Makale özetleri dahil çevrilir)", ["Türkçe", "English"], horizontal=True)
 
 if dil == "Türkçe":
@@ -182,13 +87,6 @@ if dil == "Türkçe":
     sonuc_etiket = "Sonuç"
     ozet_etiket = "Özet"
     abstract_yok_metni = "Bu yayının özet (abstract) verisi bulunmuyor."
-    favori_ekle_etiket = "Drive'a Kaydet ⭐"
-    favori_baslik = "📁 Kayıtlılara Eriş & Arşiv"
-    excel_buton_metni = "Ortak Arşivi Excel Olarak Aç 📊"
-    favori_bos_uyari = "Google Drive'da kayıtlı favori bulunamadı."
-    kimsin_sorusu = "Sen Kimsin? (İsminizi yazın)"
-    kimsin_placeholder = "Örn: Dr. Ahmet"
-    ekleyen_etiket = "Ekleyen"
 else:
     hedef_dil_kodu = "en"
     baslik = "🩺 Daily Literature Tracking"
@@ -206,44 +104,10 @@ else:
     sonuc_etiket = "Conclusions"
     ozet_etiket = "Abstract"
     abstract_yok_metni = "No abstract available for this article."
-    favori_ekle_etiket = "Save to Drive ⭐"
-    favori_baslik = "📁 Saved Articles & Archive"
-    excel_buton_metni = "Open Joint Archive in Excel 📊"
-    favori_bos_uyari = "No favorites found on Google Drive."
-    kimsin_sorusu = "Who are you? (Enter your name)"
-    kimsin_placeholder = "e.g., Dr. John"
-    ekleyen_etiket = "Added by"
 
 # Arayüz Başlıkları
 st.title(baslik)
 st.write(acıklama)
-
-# --- SEN KİMSİN? İSİM GİRİŞ ALANI ---
-kullanici_adi = st.text_input(kimsin_sorusu, placeholder=kimsin_placeholder)
-
-# --- Sol Panel ---
-with st.sidebar:
-    st.header(favori_baslik)
-    
-    excel_html = f'<a href="{TABLO_URL}" target="_blank" class="excel-buton">{excel_buton_metni}</a>'
-    st.markdown(excel_html, unsafe_allow_html=True)
-    
-    st.write("---")
-    
-    favori_df = favorileri_yukle()
-    if favori_df.empty:
-        st.info(favori_bos_uyari)
-    else:
-        for idx, row in favori_df.iterrows():
-            ekleyen_bilgisi = row.get('ekleyen', 'Bilinmiyor')
-            st.markdown(f"**{row['index']}. {row['baslik']}**")
-            st.write(f"_{row['dergi']}_")
-            st.write(f"*{ekleyen_etiket}: {ekleyen_bilgisi}*")
-            st.markdown(f"[Link]({row['link']})")
-            if st.button(f"Sürücüden Sil / Delete", key=f"del_{row['pmid']}"):
-                favori_cikar_sheets(row['pmid'])
-                st.rerun()
-            st.divider()
 
 Entrez.email = "doktor@email.com"
 
@@ -259,7 +123,7 @@ if st.button(buton_metni, type="primary"):
             '"pediatric rheumatology"', '"behçet"', '"juvenile idiopathic arthritis"',
             '"familial mediterranean fever"', '"systemic lupus erythematosus"',
             '"kawasaki disease"', '"juvenile dermatomyositis"', '"pediatric vasculitis"',
-            '"systemic sclerosis"', '"localized sclerosisoderma"', '"IgA vasculitis"'
+            '"systemic sclerosis"', '"localized scleroderma"', '"IgA vasculitis"'
         ]
         
         arama_terimi = f'({" OR ".join(terimler)}) AND {tarih_sorgusu}'
@@ -280,11 +144,8 @@ if st.button(buton_metni, type="primary"):
             
             st.session_state.son_aramalar = makale_detaylari['PubmedArticle']
 
-# Eğer dünden taranmış makaleler varsa ekrana bas
+# Hafızadaki makaleleri ekrana basma
 if 'son_aramalar' in st.session_state:
-    favori_df = favorileri_yukle()
-    kayitli_pmidler = favori_df['pmid'].astype(str).values if not favori_df.empty else []
-    
     for i, makale in enumerate(st.session_state.son_aramalar):
         try:
             medline_citation = makale['MedlineCitation']
@@ -362,21 +223,9 @@ if 'son_aramalar' in st.session_state:
             
             st.markdown(kart_html, unsafe_allow_html=True)
             
-            col1, col2 = st.columns([2, 1])
-            with col1:
-                buton_html = f'<a href="{pubmed_linki}" target="_blank" class="ozel-buton">{git_butonu_metni}</a>'
-                st.markdown(buton_html, unsafe_allow_html=True)
-            with col2:
-                fav_durum = str(pmid) in kayitli_pmidler
-                is_fav = st.checkbox(favori_ekle_etiket, value=fav_durum, key=f"fav_cb_{pmid}")
-                
-                if is_fav and str(pmid) not in kayitli_pmidler:
-                    favori_ekle_sheets(i + 1, pmid, baslik_metni, dergi_metni, pubmed_linki, kullanici_adi)
-                    st.rerun()
-                elif not is_fav and str(pmid) in kayitli_pmidler:
-                    favori_cikar_sheets(pmid)
-                    st.rerun()
-                    
+            # Eski orijinal buton yapımız
+            buton_html = f'<a href="{pubmed_linki}" target="_blank" class="ozel-buton">{git_butonu_metni}</a>'
+            st.markdown(buton_html, unsafe_allow_html=True)
             st.markdown("<br>", unsafe_allow_html=True)
             
         except Exception as e:
