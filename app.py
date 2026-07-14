@@ -92,7 +92,34 @@ ROBOT_KIMLIGI = {
   "type": "service_account",
   "project_id": "wired-effort-502410-g2",
   "private_key_id": "7bc57a92e0e8bd0676b38b1447e1aa0892aa9e30",
-  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC+1ymky9Pgcm7u\nOBad/vo+4s4N6fL4H9dF5QliCG4ZNvw7p71afNWMFXUc1YV4teSRCoxm+9wZCkLY\nHsFOI2irPkE2XySzfaPBE+h/14YRkOC7FLtZRczljrWvsw2o0rNwtj0e3JY1oOx3\nnOWpRdVzcMX6ndUblW5J1NU3K9noFhDRV41gRVT+Oe8IKNr40jkjcETey3lQRt69\nePD02odJUjjZI02d2rb2t8aQHz6q4sha89lKr9TnTiwEQ2UH6lKFqO1LbEhgUd51\nbxl4qYNxkmjjyx3tucoe2wpV8VSMEgOBd5RV4IyT7EQFC9yZakEP9qfwxIV++qum\nOQ0t42JjAgMBAAECggEAFiWXHhpPaNUu3XNh4I0GEoU0n3W+biAX1fMp/xf2WvPA\nGtYxCc7B44Nb93AqEKOfNlvQhmUFGlzP/A+5pC1EyNatL7ej5TaX6eC7Exb6ZpB3\nHA7gXRBWIm/I0u6HD8f/7f0gI7Q6tFeMCaeKGXZSupZkS1zErfJN/cB2y/PJUn8F\na57RTByVzGBYsEJT6lA7qyzEGGiidfDbWIVM/oKOrWw6VHkq/rTSMZd24PwY9BUa\n1EkvBORO24eX2EbqvALjfD0PPKdfN7BPCZ/0l4zULFuvrG6H51v1Le23jFgBy6aV\nlOnG6x2MFk6MDZPkB9hG7EpPslI8zpLWdIXUEMhaJQKBgQD3msPb/uGX439niM4B\nv7IOlZ1PE06nBRUEcUzURe9T/adsPUT2SA0OojyB0jex6UGtvUigbpa0eReaTjgN\nl/+AZKKTT6M25uUOhrQ9cjvFRzCqo8nABS+jRWoB7R+3Vq/ndXyINOkv5narQQPQ\nM7yicFmpNM//PqsxHe0bin69JwKBgQDFT63dvxpDI6TEGTaoh4gB6a8acc9cHIgQ\nEsKwWvx2KVqp2SnGIXw822bWhjtdbK/MqdHR11uhUc5P4Ha3UdaKdoCjeP8UbzEK\nozba5bbG9hiQydXmkjCh0Al+9RgpE6SuUNYtveO/kzvbpMe4hpZRZ9BtgRpnfhJI\nuHRQ4ARuZQKBgQDbrzoln/BCljt8/flhvdZacE6BUW0QbUbniSsUj/Q3Pi/krjvY\nk7baDAHJYV2/AWkfoHimt1gJSgMyCkJbdUfhf+hq8VarqJMEn2mdtxPnBjHcxLOF\nJlTM9RKIIP5p6YTqxOe35dIbiMwzR9z9RloQecRjh5MgMVcsnhO4wtmOMwKBgE7+\njX9fySXkGU0hQw7J5BvP8PjHY9te2OKGgEeWxciQ2elyNhVKxrCerldouk+2+dMY\nkhZPADJfzBeSqDTQoPIia3IHOSh3M80sdwPAQCL71+3vwKFlGe9OmN6pRZj8ckwP\ntQ/vHEVQrwBKwmMQDxJcW8fbjjSs9qkCoB7Y8S05AoGAJG61yDBsAGTdIPSkjUVi\nHzpdXkRHAe6IZA9vVn8hmm7BJCGptzeqRmjBmbR7ILUCWluXgXJpIXrMMo/5U+Sz\nFkaBxi6ZMLUrVewql9Xw+CR4GJjSOf4ke71uDqRjmrAxA+CjTbtgYyBCFAcgb4/7\nz42nDgXl96wIE3a7NEDi1LE=\n-----END PRIVATE KEY-----\n",
+  "private_key": """-----BEGIN PRIVATE KEY-----
+MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC+1ymky9Pgcm7u
+OBad/vo+4s4N6fL4H9dF5QliCG4ZNvw7p71afNWMFXUc1YV4teSRCoxm+9wZCkLY
+HsFOI2irPkE2XySzfaPBE+h/14YRkOC7FLtZRczljrWvsw2o0rNwtj0e3JY1oOx3
+nOWpRdVzcMX6ndUblW5J1NU3K9noFhDRV41gRVT+Oe8IKNr40jkjcETey3lQRt69
+ePD02odJUjjZI02d2rb2t8aQHz6q4sha89lKr9TnTiwEQ2UH6lKFqO1LbEhgUd51
+bxl4qYNxkmjjyx3tucoe2wpV8VSMEgOBd5RV4IyT7EQFC9yZakEP9qfwxIV++qum
+OQ0t42JjAgMBAAECggEAFiWXHhpPaNUu3XNh4I0GEoU0n3W+biAX1fMp/xf2WvPA
+GtYxCc7B44Nb93AqEKOfNlvQhmUFGlzP/A+5pC1EyNatL7ej5TaX6eC7Exb6ZpB3
+HA7gXRBWIm/I0u6HD8f/7f0gI7Q6tFeMCaeKGXZSupZkS1zErfJN/cB2y/PJUn8F
+a57RTByVzGBYsEJT6lA7qyzEGGiidfDbWIVM/oKOrWw6VHkq/rTSMZd24PwY9BUa
+1EkvBORO24eX2EbqvALjfD0PPKdfN7BPCZ/0l4zULFuvrG6H51v1Le23jFgBy6aV
+lOnG6x2MFk6MDZPkB9hG7EpPslI8zpLWdIXUEMhaJQKBgQD3msPb/uGX439niM4B
+v7IOlZ1PE06nBRUEcUzURe9T/adsPUT2SA0OojyB0jex6UGtvUigbpa0eReaTjgN
+l/+AZKKTT6M25uUOhrQ9cjvFRzCqo8nABS+jRWoB7R+3Vq/ndXyINOkv5narQQPQ
+M7yicFmpNM//PqsxHe0bin69JwKBgQDFT63dvxpDI6TEGTaoh4gB6a8acc9cHIgQ
+EsKwWvx2KVqp2SnGIXw822bWhjtdbK/MqdHR11uhUc5P4Ha3UdaKdoCjeP8UbzEK
+ozba5bbG9hiQydXmkjCh0Al+9RgpE6SuUNYtveO/kzvbpMe4hpZRZ9BtgRpnfhJI
+uHRQ4ARuZQKBgQDbrzoln/BCljt8/flhvdZacE6BUW0QbUbniSsUj/Q3Pi/krjvY
+k7baDAHJYV2/AWkfoHimt1gJSgMyCkJbdUfhf+hq8VarqJMEn2mdtxPnBjHcxLOF
+JlTM9RKIIP5p6YTqxOe35dIbiMwzR9z9RloQecRjh5MgMVcsnhO4wtmOMwKBgE7+
+jX9fySXkGU0hQw7J5BvP8PjHY9te2OKGgEeWxciQ2elyNhVKxrCerldouk+2+dMY
+khZPADJfzBeSqDTQoPIia3IHOSh3M80sdwPAQCL71+3vwKFlGe9OmN6pRZj8ckwP
+tQ/vHEVQrwBKwmMQDxJcW8fbjjSs9qkCoB7Y8S05AoGAJG61yDBsAGTdIPSkjUVi
+HzpdXkRHAe6IZA9vVn8hmm7BJCGptzeqRmjBmbR7ILUCWluXgXJpIXrMMo/5U+Sz
+FkaBxi6ZMLUrVewql9Xw+CR4GJjSOf4ke71uDqRjmrAxA+CjTbtgYyBCFAcgb4/7
+z42nDgXl96wIE3a7NEDi1LE=
+-----END PRIVATE KEY-----""",
   "client_email": "streamlit-yazar@wired-effort-502410-g2.iam.gserviceaccount.com",
   "client_id": "111242240198387384092",
   "auth_uri": "https://accounts.google.com/o/oauth2/auth",
@@ -104,16 +131,11 @@ ROBOT_KIMLIGI = {
 
 @st.cache_resource
 def get_gspread_client():
-    info = dict(ROBOT_KIMLIGI)
-    # Şifredeki \n karakterlerini gerçek alt satıra dönüştürerek format hatasını sıfıra indiriyoruz
-    if "private_key" in info:
-        info["private_key"] = info["private_key"].replace("\\n", "\n")
-        
     scope = [
         "https://www.googleapis.com/auth/spreadsheets",
         "https://www.googleapis.com/auth/drive"
     ]
-    creds = Credentials.from_service_account_info(info, scopes=scope)
+    creds = Credentials.from_service_account_info(ROBOT_KIMLIGI, scopes=scope)
     return gspread.authorize(creds)
 
 def favorileri_yukle():
