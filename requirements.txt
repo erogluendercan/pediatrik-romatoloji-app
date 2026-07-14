@@ -1,2 +1,3 @@
 biopython
 deep-translator
+st-gsheets-connection
