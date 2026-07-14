@@ -90,8 +90,13 @@ st.markdown(
 # --- DIRECT GOOGLE API (GSPREAD) BAĞLANTISI ---
 @st.cache_resource
 def get_gspread_client():
-    # Secrets içindeki gcp_service_account bilgilerini doğrudan sözlük olarak alıyoruz
+    # Secrets'ten verileri güvenle sözlük olarak çekiyoruz
     info = dict(st.secrets["gcp_service_account"])
+    
+    # PEM şifre çözme hatasını (InvalidPadding) önlemek için satır başlarını temizleyip düzeltiyoruz
+    if "private_key" in info:
+        info["private_key"] = info["private_key"].replace("\\n", "\n")
+        
     scope = [
         "https://www.googleapis.com/auth/spreadsheets",
         "https://www.googleapis.com/auth/drive"
@@ -108,7 +113,6 @@ def favorileri_yukle():
             return pd.DataFrame(columns=["index", "pmid", "baslik", "dergi", "link", "ekleyen"])
         return pd.DataFrame(data)
     except Exception as e:
-        # Hata durumunda ekranda ne olduğunu görebilmemiz için log basıyoruz
         st.sidebar.error(f"Bağlantı Hatası: {e}")
         return pd.DataFrame(columns=["index", "pmid", "baslik", "dergi", "link", "ekleyen"])
 
@@ -117,11 +121,9 @@ def favori_ekle_sheets(index, pmid, baslik, dergi, link, ekleyen_kisi):
         client = get_gspread_client()
         sheet = client.open_by_key(TABLO_ID).sheet1
         
-        # Mevcut veriyi kontrol et
         df = favorileri_yukle()
         if str(pmid) not in df['pmid'].astype(str).values:
             ekleyen = ekleyen_kisi if ekleyen_kisi else "Anonim/Anonymous"
-            # Doğrudan tablonun sonuna yeni satır ekle
             sheet.append_row([int(index), str(pmid), str(baslik), str(dergi), str(link), str(ekleyen)])
     except Exception as e:
         st.error(f"Ekleme Hatası: {e}")
@@ -133,11 +135,9 @@ def favori_cikar_sheets(pmid):
         df = favorileri_yukle()
         
         df['pmid'] = df['pmid'].astype(str)
-        # Silinecek pmid'nin satır indeksini bul (Google Sheets 1 tabanlıdır ve başlık 1. satırdır, o yüzden +2 ekliyoruz)
         silinecek_indexler = df.index[df['pmid'] == str(pmid)].tolist()
         
         if silinecek_indexler:
-            # Satırların kaymaması için sondan başa doğru silme işlemi yapıyoruz
             for idx in sorted(silinecek_indexler, reverse=True):
                 sheet.delete_rows(idx + 2)
     except Exception as e:
@@ -211,11 +211,10 @@ st.write(acıklama)
 # --- SEN KİMSİN? İSİM GİRİŞ ALANI ---
 kullanici_adi = st.text_input(kimsin_sorusu, placeholder=kimsin_placeholder)
 
-# --- Geliştirilmiş Sol Panel (Kayıtlılara Eriş & Excel Linki) ---
+# --- Sol Panel ---
 with st.sidebar:
     st.header(favori_baslik)
     
-    # Doğrudan Google Sheets linkine yönlendirme
     excel_html = f'<a href="{TABLO_URL}" target="_blank" class="excel-buton">{excel_buton_metni}</a>'
     st.markdown(excel_html, unsafe_allow_html=True)
     
@@ -357,7 +356,6 @@ if 'son_aramalar' in st.session_state:
             
             col1, col2 = st.columns([2, 1])
             with col1:
-                # Koyu renkli yüksek kontrastlı "Makaleye Git" butonu
                 buton_html = f'<a href="{pubmed_linki}" target="_blank" class="ozel-buton">{git_butonu_metni}</a>'
                 st.markdown(buton_html, unsafe_allow_html=True)
             with col2:
