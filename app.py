@@ -24,29 +24,12 @@ st.markdown(
     /* Mobil uyumlu, beyaz gölgeli makale kutuları */
     .makale-kart {
         background-color: #FFFFFF;
-        padding: 16px;
+        padding: 18px;
         border-radius: 12px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        margin-bottom: 20px;
+        margin-bottom: 15px;
         border-left: 6px solid #F1C40F;
         word-wrap: break-word;
-    }
-    
-    /* Makaleye Git link butonunun modern tasarımı */
-    .makale-link {
-        display: inline-block;
-        background-color: #3498db;
-        color: white !important;
-        padding: 8px 16px;
-        font-size: 0.85em;
-        font-weight: bold;
-        text-decoration: none;
-        border-radius: 6px;
-        margin-top: 10px;
-        transition: background-color 0.2s ease;
-    }
-    .makale-link:hover {
-        background-color: #2980b9;
     }
     
     @media (max-width: 640px) {
@@ -77,6 +60,7 @@ if dil == "Türkçe":
     yontem_etiket = "Yöntem"
     sonuc_etiket = "Sonuç"
     ozet_etiket = "Özet"
+    abstract_yok_metni = "Bu yayının özet (abstract) verisi bulunmuyor."
 else:
     baslik = "🩺 Daily Literature Tracking"
     acıklama = "List **Pediatric Rheumatology** papers uploaded to PubMed yesterday with a single click."
@@ -92,6 +76,7 @@ else:
     yontem_etiket = "Methods"
     sonuc_etiket = "Conclusions"
     ozet_etiket = "Abstract"
+    abstract_yok_metni = "No abstract available for this article."
 
 # Arayüz Başlıkları
 st.title(baslik)
@@ -138,7 +123,7 @@ if st.button(buton_metni, type="primary"):
                     dergi_metni = article['Journal']['Title']
                     pmid = medline_citation['PMID']
                     
-                    # Tarih bilgilerini güvenli bir şekilde çekme
+                    # Gelişmiş Tarih Çekme Algoritması
                     yayin_tarihi = "Bilinmiyor / Unknown"
                     if 'JournalIssue' in article['Journal'] and 'PubDate' in article['Journal']['JournalIssue']:
                         pub_date = article['Journal']['JournalIssue']['PubDate']
@@ -147,7 +132,14 @@ if st.button(buton_metni, type="primary"):
                             if 'Month' in pub_date: yayin_tarihi += f" {pub_date['Month']}"
                             if 'Day' in pub_date: yayin_tarihi += f" {pub_date['Day']}"
                     
-                    pubmed_giris_tarihi = dun.strftime('%d.%m.%Y') # Sorguladığımız günün kendisi
+                    if yayin_tarihi == "Bilinmiyor / Unknown" or len(yayin_tarihi) <= 4:
+                        article_date = article.get('ArticleDate', [])
+                        if article_date:
+                            e_date = article_date[0]
+                            if 'Year' in e_date and 'Month' in e_date and 'Day' in e_date:
+                                yayin_tarihi = f"{e_date['Day']}.{e_date['Month']}.{e_date['Year']}"
+                    
+                    pubmed_giris_tarihi = dun.strftime('%d.%m.%Y')
                     
                     # Merkez bilgisi
                     merkez_metni = "Merkez bilgisine ulaşılamadı / Center info not found."
@@ -173,31 +165,32 @@ if st.button(buton_metni, type="primary"):
                     
                     pubmed_linki = f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/"
                     
-                    # HTML Kart Tasarımı (Tarihler alt alta eklendi)
-                    kart_icerigi = f"""
+                    # Kart İçeriğini Hazırlama
+                    kart_html = f"""
                     <div class="makale-kart">
-                        <h3 style="margin-top: 0; font-size: 1.25em;">{i+1}. {baslik_metni}</h3>
-                        <p style="margin: 3px 0; font-size: 0.9em;"><b>{dergi_etiket}:</b> {dergi_metni}</p>
-                        <p style="margin: 3px 0; font-size: 0.9em;"><b>{yayin_tarihi_etiket}:</b> {yayin_tarihi}</p>
-                        <p style="margin: 3px 0; font-size: 0.9em;"><b>{pubmed_tarihi_etiket}:</b> {pubmed_giris_tarihi}</p>
-                        <p style="margin: 3px 0; font-size: 0.9em;"><b>{merkez_etiket}:</b> {merkez_metni}</p>
+                        <h3 style="margin-top: 0; font-size: 1.25em; color: #2C3E50;">{i+1}. {baslik_metni}</h3>
+                        <p style="margin: 3px 0; font-size: 0.9em; color: #555;"><b>{dergi_etiket}:</b> {dergi_metni}</p>
+                        <p style="margin: 3px 0; font-size: 0.9em; color: #555;"><b>{yayin_tarihi_etiket}:</b> {yayin_tarihi}</p>
+                        <p style="margin: 3px 0; font-size: 0.9em; color: #555;"><b>{pubmed_tarihi_etiket}:</b> {pubmed_giris_tarihi}</p>
+                        <p style="margin: 3px 0; font-size: 0.9em; color: #555;"><b>{merkez_etiket}:</b> {merkez_metni}</p>
                         <hr style="border: 0; border-top: 1px solid #ECF0F1; margin: 12px 0;">
                     """
                     
                     if yontem:
-                        kart_icerigi += f"<p style='margin: 10px 0;'><b>[{yontem_etiket}]:</b> {' '.join(yontem)}</p>"
+                        kart_html += f"<p style='margin: 10px 0; color: #333;'><b>[{yontem_etiket}]:</b> {' '.join(yontem)}</p>"
                     if sonuc:
-                        kart_icerigi += f"<p style='margin: 10px 0; color: #27AE60;'><b>[{sonuc_etiket}]:</b> {' '.join(sonuc)}</p>"
+                        kart_html += f"<p style='margin: 10px 0; color: #27AE60;'><b>[{sonuc_etiket}]:</b> {' '.join(sonuc)}</p>"
                     if not yontem and not sonuc and duz_abstract:
-                        kart_icerigi += f"<p style='margin: 10px 0;'><b>[{ozet_etiket}]:</b> {' '.join(duz_abstract)}</p>"
+                        kart_html += f"<p style='margin: 10px 0; color: #333;'><b>[{ozet_etiket}]:</b> {' '.join(duz_abstract)}</p>"
+                    if not yontem and not sonuc and not duz_abstract:
+                        # Seçilen dile göre dinamik "Özet bulunamadı" uyarısı
+                        kart_html += f"<p style='margin: 10px 0; color: #7F8C8D; font-style: italic;'>{abstract_yok_metni}</p>"
                     
-                    kart_icerigi += f"""
-                        <div style="text-align: right; margin-top: 15px;">
-                            <a href="{pubmed_linki}" target="_blank" class="makale-link">{git_butonu_metni}</a>
-                        </div>
-                    </div>
-                    """
+                    kart_html += "</div>"
                     
-                    st.markdown(kart_icerigi, unsafe_allow_html=True)
-                except:
+                    st.markdown(kart_html, unsafe_allow_html=True)
+                    st.link_button(git_butonu_metni, pubmed_linki, type="secondary")
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    
+                except Exception as e:
                     continue
