@@ -2,14 +2,16 @@ import streamlit as st
 import datetime
 from Bio import Entrez
 from deep_translator import GoogleTranslator
-from streamlit_gsheets import GSheetsConnection
+import gspread
+from google.oauth2.service_account import Credentials
 import pandas as pd
 
 # Sayfa Tasarımı ve Başlık
 st.set_page_config(page_title="Pediatri Romatoloji Literatür", page_icon="🩺", layout="centered")
 
-# Sabit Google Sheets Linkiniz
+# Sabit Google Sheets Bilgileri
 TABLO_URL = "https://docs.google.com/spreadsheets/d/1PPJkcODWesAna4BlP7qFl59FfThZ5Kg-sWba5S-QDdk/edit?usp=sharing"
+TABLO_ID = "1PPJkcODWesAna4BlP7qFl59FfThZ5Kg-sWba5S-QDdk"
 
 # Sitenin arka planını sarı yapan, yazıları siyaha sabitleyen ve mobil uyumluluk sağlayan CSS
 st.markdown(
@@ -85,34 +87,61 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# --- GOOGLE SHEETS BAĞLANTISI ---
-conn = st.connection("gsheets", type=GSheetsConnection)
+# --- DIRECT GOOGLE API (GSPREAD) BAĞLANTISI ---
+@st.cache_resource
+def get_gspread_client():
+    # Secrets içindeki gcp_service_account bilgilerini doğrudan sözlük olarak alıyoruz
+    info = dict(st.secrets["gcp_service_account"])
+    scope = [
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive"
+    ]
+    creds = Credentials.from_service_account_info(info, scopes=scope)
+    return gspread.authorize(creds)
 
 def favorileri_yukle():
     try:
-        return conn.read(spreadsheet=TABLO_URL, ttl="0d")
-    except:
+        client = get_gspread_client()
+        sheet = client.open_by_key(TABLO_ID).sheet1
+        data = sheet.get_all_records()
+        if not data:
+            return pd.DataFrame(columns=["index", "pmid", "baslik", "dergi", "link", "ekleyen"])
+        return pd.DataFrame(data)
+    except Exception as e:
+        # Hata durumunda ekranda ne olduğunu görebilmemiz için log basıyoruz
+        st.sidebar.error(f"Bağlantı Hatası: {e}")
         return pd.DataFrame(columns=["index", "pmid", "baslik", "dergi", "link", "ekleyen"])
 
 def favori_ekle_sheets(index, pmid, baslik, dergi, link, ekleyen_kisi):
-    df = favorileri_yukle()
-    if str(pmid) not in df['pmid'].astype(str).values:
-        yeni_satir = pd.DataFrame([{
-            "index": index, 
-            "pmid": str(pmid), 
-            "baslik": baslik, 
-            "dergi": dergi, 
-            "link": link,
-            "ekleyen": ekleyen_kisi if ekleyen_kisi else "Anonim/Anonymous"
-        }])
-        df = pd.concat([df, yeni_satir], ignore_index=True)
-        conn.update(spreadsheet=TABLO_URL, data=df)
+    try:
+        client = get_gspread_client()
+        sheet = client.open_by_key(TABLO_ID).sheet1
+        
+        # Mevcut veriyi kontrol et
+        df = favorileri_yukle()
+        if str(pmid) not in df['pmid'].astype(str).values:
+            ekleyen = ekleyen_kisi if ekleyen_kisi else "Anonim/Anonymous"
+            # Doğrudan tablonun sonuna yeni satır ekle
+            sheet.append_row([int(index), str(pmid), str(baslik), str(dergi), str(link), str(ekleyen)])
+    except Exception as e:
+        st.error(f"Ekleme Hatası: {e}")
 
 def favori_cikar_sheets(pmid):
-    df = favorileri_yukle()
-    df['pmid'] = df['pmid'].astype(str)
-    df = df[df['pmid'] != str(pmid)]
-    conn.update(spreadsheet=TABLO_URL, data=df)
+    try:
+        client = get_gspread_client()
+        sheet = client.open_by_key(TABLO_ID).sheet1
+        df = favorileri_yukle()
+        
+        df['pmid'] = df['pmid'].astype(str)
+        # Silinecek pmid'nin satır indeksini bul (Google Sheets 1 tabanlıdır ve başlık 1. satırdır, o yüzden +2 ekliyoruz)
+        silinecek_indexler = df.index[df['pmid'] == str(pmid)].tolist()
+        
+        if silinecek_indexler:
+            # Satırların kaymaması için sondan başa doğru silme işlemi yapıyoruz
+            for idx in sorted(silinecek_indexler, reverse=True):
+                sheet.delete_rows(idx + 2)
+    except Exception as e:
+        st.error(f"Silme Hatası: {e}")
 
 # Yardımcı Çeviri Fonksiyonu
 def ceviri_yap(metin, hedef_dil):
@@ -186,7 +215,7 @@ kullanici_adi = st.text_input(kimsin_sorusu, placeholder=kimsin_placeholder)
 with st.sidebar:
     st.header(favori_baslik)
     
-    # Doğrudan sizin verdiğiniz Google Sheets linkine yönlendirme
+    # Doğrudan Google Sheets linkine yönlendirme
     excel_html = f'<a href="{TABLO_URL}" target="_blank" class="excel-buton">{excel_buton_metni}</a>'
     st.markdown(excel_html, unsafe_allow_html=True)
     
