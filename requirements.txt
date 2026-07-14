@@ -1,4 +1,2 @@
 biopython
 deep-translator
-gspread
-google-auth
