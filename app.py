@@ -8,6 +8,9 @@ import pandas as pd
 # Sayfa Tasarımı ve Başlık
 st.set_page_config(page_title="Pediatri Romatoloji Literatür", page_icon="🩺", layout="centered")
 
+# Sabit Google Sheets Linkiniz
+TABLO_URL = "https://docs.google.com/spreadsheets/d/1PPJkcODWesAna4BlP7qFl59FfThZ5Kg-sWba5S-QDdk/edit?usp=sharing"
+
 # Sitenin arka planını sarı yapan, yazıları siyaha sabitleyen ve mobil uyumluluk sağlayan CSS
 st.markdown(
     """
@@ -70,6 +73,7 @@ st.markdown(
     }
     .excel-buton:hover {
         background-color: #219653 !important;
+        color: #FFFFFF !important;
     }
     
     @media (max-width: 640px) {
@@ -86,7 +90,7 @@ conn = st.connection("gsheets", type=GSheetsConnection)
 
 def favorileri_yukle():
     try:
-        return conn.read(spreadsheet=st.secrets["private_gsheets_url"], ttl="0d")
+        return conn.read(spreadsheet=TABLO_URL, ttl="0d")
     except:
         return pd.DataFrame(columns=["index", "pmid", "baslik", "dergi", "link", "ekleyen"])
 
@@ -102,13 +106,13 @@ def favori_ekle_sheets(index, pmid, baslik, dergi, link, ekleyen_kisi):
             "ekleyen": ekleyen_kisi if ekleyen_kisi else "Anonim/Anonymous"
         }])
         df = pd.concat([df, yeni_satir], ignore_index=True)
-        conn.update(spreadsheet=st.secrets["private_gsheets_url"], data=df)
+        conn.update(spreadsheet=TABLO_URL, data=df)
 
 def favori_cikar_sheets(pmid):
     df = favorileri_yukle()
     df['pmid'] = df['pmid'].astype(str)
     df = df[df['pmid'] != str(pmid)]
-    conn.update(spreadsheet=st.secrets["private_gsheets_url"], data=df)
+    conn.update(spreadsheet=TABLO_URL, data=df)
 
 # Yardımcı Çeviri Fonksiyonu
 def ceviri_yap(metin, hedef_dil):
@@ -182,14 +186,12 @@ kullanici_adi = st.text_input(kimsin_sorusu, placeholder=kimsin_placeholder)
 with st.sidebar:
     st.header(favori_baslik)
     
-    # Doğrudan Google Sheets linkinize giden yeşil, yüksek kontrastlı buton
-    excel_link = st.secrets["private_gsheets_url"]
-    excel_html = f'<a href="{excel_link}" target="_blank" class="excel-buton">{excel_buton_metni}</a>'
+    # Doğrudan sizin verdiğiniz Google Sheets linkine yönlendirme
+    excel_html = f'<a href="{TABLO_URL}" target="_blank" class="excel-buton">{excel_buton_metni}</a>'
     st.markdown(excel_html, unsafe_allow_html=True)
     
-    st.write("---") # Ayırıcı çizgi
+    st.write("---")
     
-    # Alt tarafta yine de hızlıca göz atmak isteyenler için liste
     favori_df = favorileri_yukle()
     if favori_df.empty:
         st.info(favori_bos_uyari)
@@ -295,7 +297,7 @@ if 'son_aramalar' in st.session_state:
                         sonuc.append(text)
             
             yontem_metni = ceviri_yap(' '.join(yontem), hedef_dil_kodu) if yontem else ""
-            sonuc_metni = ceviri_yap(' '.join(sonuc), gateway_dil_kodu) if sonuc else ""
+            sonuc_metni = ceviri_yap(' '.join(sonuc), hedef_dil_kodu) if sonuc else ""
             duz_abstract_metni = ceviri_yap(' '.join(duz_abstract), hedef_dil_kodu) if duz_abstract else ""
             
             pubmed_linki = f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/"
@@ -326,7 +328,7 @@ if 'son_aramalar' in st.session_state:
             
             col1, col2 = st.columns([2, 1])
             with col1:
-                # Koyu renkli zıt arka planlı "Makaleye Git" butonumuz
+                # Koyu renkli yüksek kontrastlı "Makaleye Git" butonu
                 buton_html = f'<a href="{pubmed_linki}" target="_blank" class="ozel-buton">{git_butonu_metni}</a>'
                 st.markdown(buton_html, unsafe_allow_html=True)
             with col2:
