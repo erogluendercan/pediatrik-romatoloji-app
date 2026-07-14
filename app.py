@@ -90,12 +90,16 @@ st.markdown(
 # --- DIRECT GOOGLE API (GSPREAD) BAĞLANTISI ---
 @st.cache_resource
 def get_gspread_client():
-    # Secrets'ten verileri güvenle sözlük olarak çekiyoruz
     info = dict(st.secrets["gcp_service_account"])
     
-    # PEM şifre çözme hatasını (InvalidPadding) önlemek için satır başlarını temizleyip düzeltiyoruz
+    # Şifre PEM formatı hatalarını kökten engellemek için gelişmiş temizlik yöntemi
     if "private_key" in info:
-        info["private_key"] = info["private_key"].replace("\\n", "\n")
+        pk = info["private_key"]
+        # Eğer çift eğik çizgiler kalmışsa onları temizle
+        pk = pk.replace("\\n", "\n")
+        # Baştaki ve sondaki gereksiz tırnakları veya boşlukları kırp
+        pk = pk.strip().strip('"').strip("'")
+        info["private_key"] = pk
         
     scope = [
         "https://www.googleapis.com/auth/spreadsheets",
@@ -113,7 +117,8 @@ def favorileri_yukle():
             return pd.DataFrame(columns=["index", "pmid", "baslik", "dergi", "link", "ekleyen"])
         return pd.DataFrame(data)
     except Exception as e:
-        st.sidebar.error(f"Bağlantı Hatası: {e}")
+        # Sorun çıkması halinde şık bir şekilde uyarı veriyoruz
+        st.sidebar.error(f"Bağlantı Sorunu: {e}")
         return pd.DataFrame(columns=["index", "pmid", "baslik", "dergi", "link", "ekleyen"])
 
 def favori_ekle_sheets(index, pmid, baslik, dergi, link, ekleyen_kisi):
@@ -270,7 +275,7 @@ if st.button(buton_metni, type="primary"):
             
             st.session_state.son_aramalar = makale_detaylari['PubmedArticle']
 
-# Eğer hafızada taranmış makaleler varsa ekrana bas
+# Eğer dünden taranmış makaleler varsa ekrana bas
 if 'son_aramalar' in st.session_state:
     favori_df = favorileri_yukle()
     kayitli_pmidler = favori_df['pmid'].astype(str).values if not favori_df.empty else []
@@ -284,7 +289,6 @@ if 'son_aramalar' in st.session_state:
             baslik_metni = ceviri_yap(article['ArticleTitle'], hedef_dil_kodu)
             dergi_metni = article['Journal']['Title']
             
-            # Gelişmiş Tarih Çekme Algoritması
             yayin_tarihi = "Bilinmiyor / Unknown"
             if 'JournalIssue' in article['Journal'] and 'PubDate' in article['Journal']['JournalIssue']:
                 pub_date = article['Journal']['JournalIssue']['PubDate']
@@ -330,7 +334,6 @@ if 'son_aramalar' in st.session_state:
             
             pubmed_linki = f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/"
             
-            # HTML Kart Tasarımı
             kart_html = f"""
             <div class="makale-kart">
                 <h3 style="margin-top: 0; font-size: 1.25em; color: #2C3E50;">{i+1}. {baslik_metni}</h3>
