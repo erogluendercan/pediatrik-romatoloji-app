@@ -1,6 +1,7 @@
 import streamlit as st
 import datetime
 from Bio import Entrez
+from deep_translator import GoogleTranslator
 
 # Sayfa Tasarımı ve Başlık
 st.set_page_config(page_title="Pediatri Romatoloji Literatür", page_icon="🩺", layout="centered")
@@ -9,19 +10,14 @@ st.set_page_config(page_title="Pediatri Romatoloji Literatür", page_icon="🩺"
 st.markdown(
     """
     <style>
-    /* Ana arka planı yumuşak bir sarı yapar ve hafif kemik deseni ekler */
     .stApp {
         background-color: #FEF9E7;
         background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><path d='M35,15 C35,12 30,12 30,15 C30,18 35,18 35,15 M45,15 C45,12 50,12 50,15 C50,18 45,18 45,15 M32,16 L48,16 C48,22 32,22 32,16 M38,15 L42,15 L42,35 L38,35 Z' fill='%23F1C40F' fill-opacity='0.15' transform='rotate(45 40 25)'/></svg>");
         background-repeat: repeat;
     }
-    
-    /* Üst taraftaki tüm yazıların, butonların ve radyo butonlarının her koşulda koyu renk kalmasını sağlar */
     h1, h2, h3, p, span, label, div, .stMarkdown, .stRadio {
         color: #2C3E50 !important;
     }
-    
-    /* Mobil uyumlu, beyaz gölgeli makale kutuları */
     .makale-kart {
         background-color: #FFFFFF;
         padding: 18px;
@@ -31,7 +27,6 @@ st.markdown(
         border-left: 6px solid #F1C40F;
         word-wrap: break-word;
     }
-    
     @media (max-width: 640px) {
         .makale-kart h3 { font-size: 1.1em !important; }
         .makale-kart p { font-size: 0.85em !important; }
@@ -41,27 +36,39 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# Yardımcı Çeviri Fonksiyonu
+def ceviri_yap(metin, hedef_dil):
+    if not metin or hedef_dil == "en":
+        return metin
+    try:
+        # Metni otomatik algılayıp Türkçeye çevirir
+        return GoogleTranslator(source='auto', target='tr').translate(metin)
+    except:
+        return metin # Çeviride hata olursa orijinal metni korur
+
 # 1. ADIM: En Başta Dil Seçimi
-dil = st.radio("Language / Dil Seçimi", ["Türkçe", "English"], horizontal=True)
+dil = st.radio("Language / Dil Seçimi (Makale özetleri dahil çevrilir)", ["Türkçe", "English"], horizontal=True)
 
 # Dil seçimine göre dinamik metinlerin ayarlanması
 if dil == "Türkçe":
+    hedef_dil_kodu = "tr"
     baslik = "🩺 Günlük Literatür Takibi"
-    acıklama = "PubMed'e dün yüklenen **Pediatrik Romatoloji** makalelerini tek tuşla listeleyin."
-    buton_metni = "Dünün Hasılatını Getir"
-    yukleniyor_metni = "PubMed taranıyor, lütfen bekleyin..."
+    acıklama = "PubMed'e dün yüklenen **Pediatrik Romatoloji** makalelerini otomatik Türkçe çeviriyle listeleyin."
+    buton_metni = "Dünün Hasılatını Getir (Çeviri aktif)"
+    yukleniyor_metni = "PubMed taranıyor ve makaleler Türkçeye çevriliyor, lütfen bekleyin (Biraz uzun sürebilir)..."
     bulunamadi_metni = "Dün yeni makale yüklenmemiş."
-    bulundu_metni = "Dün yüklenen {} yeni makale bulundu!"
+    bulundu_metni = "Dün yüklenen {} yeni makale bulundu! Çeviriler hazırlanıyor..."
     dergi_etiket = "Dergi"
     merkez_etiket = "Merkez"
     yayin_tarihi_etiket = "Yayınlanma Tarihi"
     pubmed_tarihi_etiket = "PubMed Giriş Tarihi"
-    git_butonu_metni = "Makaleye Git ↗"
+    git_butonu_metni = "Orijinal Makaleye Git (PubMed) ↗"
     yontem_etiket = "Yöntem"
     sonuc_etiket = "Sonuç"
     ozet_etiket = "Özet"
     abstract_yok_metni = "Bu yayının özet (abstract) verisi bulunmuyor."
 else:
+    hedef_dil_kodu = "en"
     baslik = "🩺 Daily Literature Tracking"
     acıklama = "List **Pediatric Rheumatology** papers uploaded to PubMed yesterday with a single click."
     buton_metni = "Bring Me Yesterday's Goods ↗"
@@ -119,7 +126,9 @@ if st.button(buton_metni, type="primary"):
                 try:
                     medline_citation = makale['MedlineCitation']
                     article = medline_citation['Article']
-                    baslik_metni = article['ArticleTitle']
+                    
+                    # Orijinal metinleri alıp seçilen dile göre (TR ise) canlı çeviriyoruz
+                    baslik_metni = ceviri_yap(article['ArticleTitle'], hedef_dil_kodu)
                     dergi_metni = article['Journal']['Title']
                     pmid = medline_citation['PMID']
                     
@@ -141,7 +150,7 @@ if st.button(buton_metni, type="primary"):
                     
                     pubmed_giris_tarihi = dun.strftime('%d.%m.%Y')
                     
-                    # Merkez bilgisi
+                    # Merkez bilgisi (Çeviriye sokmuyoruz, orijinal hastane isimleri bozulmasın)
                     merkez_metni = "Merkez bilgisine ulaşılamadı / Center info not found."
                     author_list = article.get('AuthorList', [])
                     if author_list:
@@ -163,9 +172,14 @@ if st.button(buton_metni, type="primary"):
                             elif 'CONCLUSION' in label:
                                 sonuc.append(text)
                     
+                    # İçerik metinlerini birleştirip çeviriye gönderiyoruz
+                    yontem_metni = ceviri_yap(' '.join(yontem), hedef_dil_kodu) if yontem else ""
+                    sonuc_metni = ceviri_yap(' '.join(sonuc), hedef_dil_kodu) if sonuc else ""
+                    duz_abstract_metni = ceviri_yap(' '.join(duz_abstract), hedef_dil_kodu) if duz_abstract else ""
+                    
                     pubmed_linki = f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/"
                     
-                    # Kart İçeriğini Hazırlama
+                    # HTML Kart Tasarımı
                     kart_html = f"""
                     <div class="makale-kart">
                         <h3 style="margin-top: 0; font-size: 1.25em; color: #2C3E50;">{i+1}. {baslik_metni}</h3>
@@ -176,14 +190,13 @@ if st.button(buton_metni, type="primary"):
                         <hr style="border: 0; border-top: 1px solid #ECF0F1; margin: 12px 0;">
                     """
                     
-                    if yontem:
-                        kart_html += f"<p style='margin: 10px 0; color: #333;'><b>[{yontem_etiket}]:</b> {' '.join(yontem)}</p>"
-                    if sonuc:
-                        kart_html += f"<p style='margin: 10px 0; color: #27AE60;'><b>[{sonuc_etiket}]:</b> {' '.join(sonuc)}</p>"
-                    if not yontem and not sonuc and duz_abstract:
-                        kart_html += f"<p style='margin: 10px 0; color: #333;'><b>[{ozet_etiket}]:</b> {' '.join(duz_abstract)}</p>"
-                    if not yontem and not sonuc and not duz_abstract:
-                        # Seçilen dile göre dinamik "Özet bulunamadı" uyarısı
+                    if yontem_metni:
+                        kart_html += f"<p style='margin: 10px 0; color: #333;'><b>[{yontem_etiket}]:</b> {yontem_metni}</p>"
+                    if sonuc_metni:
+                        kart_html += f"<p style='margin: 10px 0; color: #27AE60;'><b>[{sonuc_etiket}]:</b> {sonuc_metni}</p>"
+                    if not yontem_metni and not sonuc_metni and duz_abstract_metni:
+                        kart_html += f"<p style='margin: 10px 0; color: #333;'><b>[{ozet_etiket}]:</b> {duz_abstract_metni}</p>"
+                    if not yontem_metni and not sonuc_metni and not duz_abstract_metni:
                         kart_html += f"<p style='margin: 10px 0; color: #7F8C8D; font-style: italic;'>{abstract_yok_metni}</p>"
                     
                     kart_html += "</div>"
