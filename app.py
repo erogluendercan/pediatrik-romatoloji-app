@@ -33,7 +33,7 @@ st.markdown(
         word-wrap: break-word;
     }
     
-    /* YÜKSEK KONTRASTLI BUTON TASARIMI: Koyu lacivert arka plan üzerine net beyaz yazı */
+    /* YÜKSEK KONTRASTLI VE ZIT RENKLİ BUTONLAR */
     .ozel-buton {
         display: inline-block;
         background-color: #1A252F !important;
@@ -52,6 +52,24 @@ st.markdown(
     .ozel-buton:hover {
         background-color: #2C3E50 !important;
         color: #F1C40F !important;
+    }
+    
+    /* Yan paneldeki Excel butonu için özel stil */
+    .excel-buton {
+        display: block;
+        background-color: #27AE60 !important;
+        color: #FFFFFF !important;
+        padding: 12px;
+        text-align: center;
+        font-weight: bold !important;
+        text-decoration: none;
+        border-radius: 8px;
+        border: 2px solid #2ECC71;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    }
+    .excel-buton:hover {
+        background-color: #219653 !important;
     }
     
     @media (max-width: 640px) {
@@ -122,7 +140,8 @@ if dil == "Türkçe":
     ozet_etiket = "Özet"
     abstract_yok_metni = "Bu yayının özet (abstract) verisi bulunmuyor."
     favori_ekle_etiket = "Drive'a Kaydet ⭐"
-    favori_baslik = "⭐ Google Drive Ortak Arşivi"
+    favori_baslik = "📁 Kayıtlılara Eriş & Arşiv"
+    excel_buton_metni = "Ortak Arşivi Excel Olarak Aç 📊"
     favori_bos_uyari = "Google Drive'da kayıtlı favori bulunamadı."
     kimsin_sorusu = "Sen Kimsin? (İsminizi yazın)"
     kimsin_placeholder = "Örn: Dr. Ahmet"
@@ -145,7 +164,8 @@ else:
     ozet_etiket = "Abstract"
     abstract_yok_metni = "No abstract available for this article."
     favori_ekle_etiket = "Save to Drive ⭐"
-    favori_baslik = "⭐ Google Drive Joint Archive"
+    favori_baslik = "📁 Saved Articles & Archive"
+    excel_buton_metni = "Open Joint Archive in Excel 📊"
     favori_bos_uyari = "No favorites found on Google Drive."
     kimsin_sorusu = "Who are you? (Enter your name)"
     kimsin_placeholder = "e.g., Dr. John"
@@ -158,15 +178,23 @@ st.write(acıklama)
 # --- SEN KİMSİN? İSİM GİRİŞ ALANI ---
 kullanici_adi = st.text_input(kimsin_sorusu, placeholder=kimsin_placeholder)
 
-# --- YAN PANEL (SIDEBAR) - GOOGLE SHEETS FAVORİLER LİSTESİ ---
+# --- Geliştirilmiş Sol Panel (Kayıtlılara Eriş & Excel Linki) ---
 with st.sidebar:
     st.header(favori_baslik)
+    
+    # Doğrudan Google Sheets linkinize giden yeşil, yüksek kontrastlı buton
+    excel_link = st.secrets["private_gsheets_url"]
+    excel_html = f'<a href="{excel_link}" target="_blank" class="excel-buton">{excel_buton_metni}</a>'
+    st.markdown(excel_html, unsafe_allow_html=True)
+    
+    st.write("---") # Ayırıcı çizgi
+    
+    # Alt tarafta yine de hızlıca göz atmak isteyenler için liste
     favori_df = favorileri_yukle()
     if favori_df.empty:
         st.info(favori_bos_uyari)
     else:
         for idx, row in favori_df.iterrows():
-            # Tabloda 'ekleyen' sütunundaki bilgiyi de çekip gösteriyoruz
             ekleyen_bilgisi = row.get('ekleyen', 'Bilinmiyor')
             st.markdown(f"**{row['index']}. {row['baslik']}**")
             st.write(f"_{row['dergi']}_")
@@ -267,7 +295,7 @@ if 'son_aramalar' in st.session_state:
                         sonuc.append(text)
             
             yontem_metni = ceviri_yap(' '.join(yontem), hedef_dil_kodu) if yontem else ""
-            sonuc_metni = ceviri_yap(' '.join(sonuc), hedef_dil_kodu) if sonuc else ""
+            sonuc_metni = ceviri_yap(' '.join(sonuc), gateway_dil_kodu) if sonuc else ""
             duz_abstract_metni = ceviri_yap(' '.join(duz_abstract), hedef_dil_kodu) if duz_abstract else ""
             
             pubmed_linki = f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/"
@@ -298,14 +326,13 @@ if 'son_aramalar' in st.session_state:
             
             col1, col2 = st.columns([2, 1])
             with col1:
-                # Yeni yüksek kontrastlı "Makaleye Git" butonumuz HTML olarak basılıyor
+                # Koyu renkli zıt arka planlı "Makaleye Git" butonumuz
                 buton_html = f'<a href="{pubmed_linki}" target="_blank" class="ozel-buton">{git_butonu_metni}</a>'
                 st.markdown(buton_html, unsafe_allow_html=True)
             with col2:
                 fav_durum = str(pmid) in kayitli_pmidler
                 is_fav = st.checkbox(favori_ekle_etiket, value=fav_durum, key=f"fav_cb_{pmid}")
                 
-                # Favoriye eklerken kullanıcının yazdığı ismi de parametre olarak gönderiyoruz
                 if is_fav and str(pmid) not in kayitli_pmidler:
                     favori_ekle_sheets(i + 1, pmid, baslik_metni, dergi_metni, pubmed_linki, kullanici_adi)
                     st.rerun()
